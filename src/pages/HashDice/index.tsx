@@ -1,8 +1,15 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useShallowEqualSelector } from "../../hooks/useShallowEqualSelector";
-import { getCurrentMoney, priceBet, winBet } from "../../store/slices/appSlice";
+import {
+  getCurrentMoney,
+  priceBet,
+  winBet,
+  selectLoading,
+  setLoading,
+} from "../../store/slices/appSlice";
 import { formatNumber } from "../../utils";
 import { useDispatch } from "react-redux";
+import AnimatedNumbers from "react-animated-numbers";
 const HashDice = () => {
   const dispatch = useDispatch();
   const [numberRandom, setNumberRandom] = useState<number>(0);
@@ -15,6 +22,7 @@ const HashDice = () => {
 
   // amount
   const currentMoney = useShallowEqualSelector(getCurrentMoney);
+  const isLoading = useShallowEqualSelector(selectLoading);
   const [amount, setAmount] = useState<number>(100000);
   const [payout, setPayout] = useState<number>(1.98);
 
@@ -38,13 +46,12 @@ const HashDice = () => {
     const max = 99999;
     const num = Math.floor(Math.random() * (max - min + 1)) + min;
     const arr = num.toString();
-    dispatch(priceBet(amount));
 
-    setTimeout(() => {
-      const newNumbers = Array.from(arr);
-      setArrayNumbersRandom(newNumbers);
-      setNumberRandom(num);
-    }, 2000);
+    dispatch(priceBet(amount));
+    dispatch(setLoading(true));
+    const newNumbers = Array.from(arr);
+    setArrayNumbersRandom(newNumbers);
+    setNumberRandom(num);
   };
   const numberMileStone = (text = "High") => {
     const milestone = {
@@ -61,7 +68,9 @@ const HashDice = () => {
         const result = amount * payout + amount;
         setMoneyAdd(amount * payout);
         dispatch(winBet(result));
+        dispatch(setLoading(false));
       } else {
+        dispatch(setLoading(false));
         return;
       }
     }
@@ -71,7 +80,9 @@ const HashDice = () => {
         const result = amount * payout + amount;
         setMoneyAdd(amount * payout);
         dispatch(winBet(result));
+        dispatch(setLoading(true));
       } else {
+        dispatch(setLoading(false));
         return;
       }
     }
@@ -79,7 +90,9 @@ const HashDice = () => {
 
   useEffect(() => {
     if (numberRandom <= 0) return;
-    compare();
+    setTimeout(() => {
+      compare();
+    }, 2000);
   }, [arrayNumbersRandom]);
 
   useEffect(() => {
@@ -151,7 +164,7 @@ const HashDice = () => {
           className="mx-4 h-16 bg-green-500 hover:bg-green-600  font-semibold text-lg flex items-center justify-center cursor-pointer"
         >
           <button
-            disabled={countRight}
+            disabled={isLoading}
             className="h-full w-full disabled:bg-slate-400"
           >
             Bet
@@ -183,7 +196,19 @@ const HashDice = () => {
             </>
           ) : arrayNumbersRandom ? (
             arrayNumbersRandom.map((number, index) => (
-              <div key={index}>{number}</div>
+              <AnimatedNumbers
+                includeComma
+                animateToNumber={parseInt(number)}
+                locale="en-US"
+                configs={[
+                  { mass: 1, tension: 220, friction: 100 },
+                  { mass: 1, tension: 180, friction: 130 },
+                  { mass: 1, tension: 280, friction: 90 },
+                  { mass: 1, tension: 180, friction: 135 },
+                  { mass: 1, tension: 260, friction: 100 },
+                  { mass: 1, tension: 210, friction: 180 },
+                ]}
+              ></AnimatedNumbers>
             ))
           ) : (
             <>
@@ -199,7 +224,7 @@ const HashDice = () => {
           <button
             onClick={generateNumbers}
             className="px-4 py-1 bg-green-500 text-white rounded-xl shadow-lg disabled:bg-slate-400"
-            disabled={countRight}
+            disabled={isLoading}
           >
             Spin
           </button>

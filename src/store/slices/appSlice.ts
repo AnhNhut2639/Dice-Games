@@ -2,12 +2,12 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "..";
 
 export interface IApp {
-  loading?: number;
+  loading?: boolean;
   money: number;
 }
 
 const initialState: IApp = {
-  loading: 0,
+  loading: false,
   money: 100000000,
 };
 
@@ -16,8 +16,7 @@ export const appSlice = createSlice({
   initialState,
   reducers: {
     setLoading: (state: any, action: PayloadAction<boolean>) => {
-      const currentLoading = state.loading;
-      state.loading = action.payload ? currentLoading + 1 : currentLoading - 1;
+      state.loading = action.payload;
     },
     increase: (state: IApp, action: PayloadAction<number>) => {
       state.money = state.money + action.payload;
@@ -33,7 +32,7 @@ export const appSlice = createSlice({
 
 export const { setLoading, priceBet, winBet } = appSlice.actions;
 
-export const selectLoading = (state: RootState): number | undefined =>
+export const selectLoading = (state: RootState): boolean | undefined =>
   state.app.loading;
 
 export const getCurrentMoney = (state: RootState): number => state.app.money;

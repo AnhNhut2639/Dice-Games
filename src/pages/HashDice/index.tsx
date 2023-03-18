@@ -1,12 +1,18 @@
 import React, { useCallback, useEffect, useState } from "react";
-
+import { useShallowEqualSelector } from "../../hooks/useShallowEqualSelector";
+import { getCurrentMoney, increase } from "../../store/slices/appSlice";
+import { formatNumber } from "../../utils";
+import { useDispatch } from "react-redux";
 const HashDice = () => {
+  const dispatch = useDispatch();
   const [numberRandom, setNumberRandom] = useState<number>(0);
   const [countRight, setCountRight] = useState<number>(0);
   const [selectedMileStone, setSelectedMileStone] = useState<number>(49999);
   const [arrayNumbersRandom, setArrayNumbersRandom] = useState<Array<string>>(
     []
   );
+
+  const currentMoney = useShallowEqualSelector(getCurrentMoney);
 
   const generateNumbers = () => {
     const min = 10000;
@@ -56,7 +62,7 @@ const HashDice = () => {
       <div className="sidebar w-1/5 h-full bg-slate-500">
         <div>
           <div>Money default</div>
-          <div>101903.070</div>
+          <div>{formatNumber(currentMoney)}</div>
         </div>
 
         <div>
@@ -64,8 +70,14 @@ const HashDice = () => {
           <div>100000000</div>
         </div>
         <div>
+          <button onClick={() => dispatch(increase(200))}>
+            Increase Amount
+          </button>
+        </div>
+        <div>
           <div>Payout</div>
         </div>
+        <div></div>
       </div>
       <div className="content w-4/5 h-full flex flex-col gap-6 items-center justify-center ">
         <div className="wrap-number flex items-center justify-center gap-4 text-5xl font-semibold">

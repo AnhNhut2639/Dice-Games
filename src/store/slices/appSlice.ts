@@ -8,7 +8,7 @@ export interface IApp {
 
 const initialState: IApp = {
   loading: 0,
-  money: 100000,
+  money: 100000000,
 };
 
 export const appSlice = createSlice({
@@ -22,10 +22,16 @@ export const appSlice = createSlice({
     increase: (state: IApp, action: PayloadAction<number>) => {
       state.money = state.money + action.payload;
     },
+    priceBet: (state: IApp, action: PayloadAction<number>) => {
+      state.money = state.money - action.payload;
+    },
+    winBet: (state: IApp, action: PayloadAction<number>) => {
+      state.money = state.money + action.payload;
+    },
   },
 });
 
-export const { setLoading, increase } = appSlice.actions;
+export const { setLoading, priceBet, winBet } = appSlice.actions;
 
 export const selectLoading = (state: RootState): number | undefined =>
   state.app.loading;

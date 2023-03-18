@@ -1,27 +1,50 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useShallowEqualSelector } from "../../hooks/useShallowEqualSelector";
-import { getCurrentMoney, increase } from "../../store/slices/appSlice";
+import { getCurrentMoney, priceBet, winBet } from "../../store/slices/appSlice";
 import { formatNumber } from "../../utils";
 import { useDispatch } from "react-redux";
 const HashDice = () => {
   const dispatch = useDispatch();
   const [numberRandom, setNumberRandom] = useState<number>(0);
-  const [countRight, setCountRight] = useState<number>(0);
+  const [countRight, setCountRight] = useState<boolean>(false);
+  const [MoneyAdd, setMoneyAdd] = useState<number>(0);
   const [selectedMileStone, setSelectedMileStone] = useState<number>(49999);
   const [arrayNumbersRandom, setArrayNumbersRandom] = useState<Array<string>>(
     []
   );
 
+  // amount
   const currentMoney = useShallowEqualSelector(getCurrentMoney);
+  const [amount, setAmount] = useState<number>(100000);
+  const [payout, setPayout] = useState<number>(1.98);
+
+  const setDoubleAmount = () => {
+    if (amount >= currentMoney) {
+      setAmount(currentMoney);
+      return;
+    }
+    setAmount(amount * 2);
+  };
+  const setDivideDoubleAmount = () => {
+    if (amount <= 100) {
+      setAmount(100);
+      return;
+    }
+    setAmount(amount / 2);
+  };
 
   const generateNumbers = () => {
     const min = 10000;
     const max = 99999;
     const num = Math.floor(Math.random() * (max - min + 1)) + min;
     const arr = num.toString();
-    const newNumbers = Array.from(arr);
-    setArrayNumbersRandom(newNumbers);
-    setNumberRandom(num);
+    dispatch(priceBet(amount));
+
+    setTimeout(() => {
+      const newNumbers = Array.from(arr);
+      setArrayNumbersRandom(newNumbers);
+      setNumberRandom(num);
+    }, 2000);
   };
   const numberMileStone = (text = "High") => {
     const milestone = {
@@ -34,14 +57,20 @@ const HashDice = () => {
   const compare = useCallback(() => {
     if (selectedMileStone === 49999) {
       if (numberRandom > 49999) {
-        setCountRight(countRight + 1);
+        setCountRight(true);
+        const result = amount * payout + amount;
+        setMoneyAdd(amount * payout);
+        dispatch(winBet(result));
       } else {
         return;
       }
     }
     if (selectedMileStone === 50000) {
       if (numberRandom <= 50000) {
-        setCountRight(countRight + 1);
+        setCountRight(true);
+        const result = amount * payout + amount;
+        setMoneyAdd(amount * payout);
+        dispatch(winBet(result));
       } else {
         return;
       }
@@ -53,33 +82,96 @@ const HashDice = () => {
     compare();
   }, [arrayNumbersRandom]);
 
-  // payout x amount = result money
-
-  // payout càng tăng thì cơ hội trúng càng giảm
+  useEffect(() => {
+    if (countRight) {
+      setTimeout(() => {
+        setCountRight(false);
+      }, 2000);
+    }
+  }, [countRight]);
 
   return (
     <div className="h-[100vh] w-[100vw] flex items-start justify-start">
-      <div className="sidebar w-1/5 h-full bg-slate-500">
-        <div>
-          <div>Money default</div>
-          <div>{formatNumber(currentMoney)}</div>
+      <div className="sidebar w-1/5 h-full bg-black py-4 text-white space-y-4">
+        <div className="flex items-center justify-center gap-4 px-4">
+          <div className="bg-gray-600 shadow-lg px-4 py-1 text-white font-semibold cursor-pointer ">
+            Manual
+          </div>
+          <div className="bg-gray-600 shadow-lg px-4 py-1 text-white opacity-70 hover:opacity-100 cursor-pointer ">
+            Auto
+          </div>
+        </div>
+        <div className="px-4 space-y-3">
+          <div className="space-y-2 ">
+            <div className="flex items-center justify-between ">
+              <div>Amount</div>
+              <div>0 USD</div>
+            </div>
+            <div className=" flex justify-between gap-1 w-full h-10 bg-gray-500 ">
+              <input
+                type="number"
+                className="outline-none h-full font-semibold w-2/4 px-1 bg-transparent"
+                value={amount}
+              />
+              <div
+                className="flex items-center justify-center h-full w-12 bg-[#31343b] cursor-pointer opacity-70 hover:opacity-100"
+                onClick={setDoubleAmount}
+              >
+                x2
+              </div>
+              <div
+                className="flex items-center justify-center h-full w-12 bg-[#31343b] cursor-pointer opacity-70 hover:opacity-100"
+                onClick={setDivideDoubleAmount}
+              >
+                /2
+              </div>
+              <div className="flex items-center justify-center h-full text-sm w-12 bg-[#31343b] cursor-pointer opacity-70 hover:opacity-100 ">
+                {`< >`}
+              </div>
+            </div>
+          </div>
+          {/* Payout  */}
+          <div className="space-y-2 ">
+            <div className="flex items-center justify-between ">
+              <div>Payout</div>
+              <div>chance: 50%</div>
+            </div>
+            <div className=" flex gap-1 w-full h-10 bg-gray-500 ">
+              <input
+                type="number"
+                className="outline-none h-full font-semibold w-full px-1 bg-transparent"
+                value={payout}
+              />
+            </div>
+          </div>
         </div>
 
-        <div>
-          <div>Amount</div>
-          <div>100000000</div>
-        </div>
-        <div>
-          <button onClick={() => dispatch(increase(200))}>
-            Increase Amount
+        <div
+          onClick={generateNumbers}
+          className="mx-4 h-16 bg-green-500 hover:bg-green-600  font-semibold text-lg flex items-center justify-center cursor-pointer"
+        >
+          <button
+            disabled={countRight}
+            className="h-full w-full disabled:bg-slate-400"
+          >
+            Bet
           </button>
         </div>
-        <div>
-          <div>Payout</div>
-        </div>
-        <div></div>
       </div>
-      <div className="content w-4/5 h-full flex flex-col gap-6 items-center justify-center ">
+      <div className="content relative w-4/5 h-full flex flex-col gap-6 items-center justify-center bg-blue-300 ">
+        <div className="absolute flex gap-1 top-10 right-20 font-semibold text-xl text-white">
+          <div>Wallet:</div>
+          <div className="relative">
+            {formatNumber(currentMoney)}
+            <div
+              className={` ${
+                countRight ? "animation-effect" : "animation-effect-reverse"
+              } absolute  font-semibold text-green-700 text-2xl w-max`}
+            >
+              + {formatNumber(MoneyAdd)}
+            </div>
+          </div>
+        </div>
         <div className="wrap-number flex items-center justify-center gap-4 text-5xl font-semibold">
           {arrayNumbersRandom.length <= 0 ? (
             <>
@@ -106,12 +198,12 @@ const HashDice = () => {
         <div>
           <button
             onClick={generateNumbers}
-            className="px-4 py-1 bg-green-500 text-white rounded-xl shadow-lg"
+            className="px-4 py-1 bg-green-500 text-white rounded-xl shadow-lg disabled:bg-slate-400"
+            disabled={countRight}
           >
             Spin
           </button>
         </div>
-
         <div className="flex items-center justify-center">
           <div
             onClick={() => numberMileStone("High")}
@@ -135,10 +227,10 @@ const HashDice = () => {
           </div>
         </div>
       </div>
-      <div>
+      {/* <div>
         compare: {selectedMileStone} {arrayNumbersRandom}
       </div>
-      <div> right:{countRight}</div>
+      <div> right:{countRight}</div> */}
     </div>
   );
 };

@@ -12,6 +12,7 @@ import { useDispatch } from "react-redux";
 import AnimatedNumbers from "react-animated-numbers";
 import SuccessSound from "../../audio/success.mp3";
 import SpinSound from "../../audio/spin.mp3";
+import { flushSync } from "react-dom";
 const HashDice = () => {
   const dispatch = useDispatch();
   const [numberRandom, setNumberRandom] = useState<number>(0);
@@ -21,6 +22,9 @@ const HashDice = () => {
   const [arrayNumbersRandom, setArrayNumbersRandom] = useState<Array<string>>(
     []
   );
+  // low and hight
+  const [low, setLow] = useState<number>(50000);
+  const [high, setHigh] = useState<number>(49999);
   // audio
   const audioSuccess = new Audio(SuccessSound);
   const audioSpin = new Audio(SpinSound);
@@ -30,7 +34,9 @@ const HashDice = () => {
   const isLoading = useShallowEqualSelector(selectLoading);
   const [amount, setAmount] = useState<number>(100000);
   const [payout, setPayout] = useState<number>(1.98);
+  const [chance, setChance] = useState<number>(50);
 
+  const maxLimit = 99000;
   const setDoubleAmount = () => {
     if (amount >= currentMoney) {
       setAmount(currentMoney);
@@ -45,13 +51,21 @@ const HashDice = () => {
     }
     setAmount(amount / 2);
   };
-
   const generateNumbers = () => {
     const min = 10000;
     const max = 99999;
+
     audioSpin.play();
     const num = Math.floor(Math.random() * (max - min + 1)) + min;
     const arr = num.toString();
+    const highSet = max - chance;
+    if (isNaN(payout) || payout === 0) {
+      setPayout(1);
+    }
+    flushSync(() => {
+      setLow(chance);
+      setHigh(highSet);
+    });
 
     dispatch(priceBet(amount));
     dispatch(setLoading(true));
@@ -59,17 +73,13 @@ const HashDice = () => {
     setArrayNumbersRandom(newNumbers);
     setNumberRandom(num);
   };
-  const numberMileStone = (text = "High") => {
-    const milestone = {
-      High: 49999,
-      Low: 50000,
-    };
-    return setSelectedMileStone(milestone[text as keyof typeof milestone]);
-  };
+  useEffect(() => {
+    setSelectedMileStone(high);
+  }, [high, low]);
 
   const compare = useCallback(() => {
-    if (selectedMileStone === 49999) {
-      if (numberRandom > 49999) {
+    if (selectedMileStone === high) {
+      if (numberRandom > high) {
         setCountRight(true);
         const result = amount * payout + amount;
         setMoneyAdd(amount * payout);
@@ -81,19 +91,20 @@ const HashDice = () => {
         return;
       }
     }
-    if (selectedMileStone === 50000) {
-      if (numberRandom <= 50000) {
+    if (selectedMileStone === low) {
+      if (numberRandom <= low) {
         setCountRight(true);
         const result = amount * payout + amount;
         setMoneyAdd(amount * payout);
         audioSuccess.play();
         dispatch(winBet(result));
-        dispatch(setLoading(true));
+        dispatch(setLoading(false));
       } else {
         dispatch(setLoading(false));
         return;
       }
     }
+    dispatch(setLoading(false));
   }, [numberRandom]);
 
   useEffect(() => {
@@ -111,6 +122,16 @@ const HashDice = () => {
     }
   }, [countRight]);
 
+  // set chance
+  useEffect(() => {
+    if (isNaN(payout) || payout === 0) {
+      const setChanceCan = maxLimit / 1;
+      setChance(setChanceCan);
+    } else {
+      const setChanceCan = maxLimit / payout;
+      setChance(setChanceCan);
+    }
+  }, [payout]);
   return (
     <div className="h-[100vh] w-[100vw] flex items-start justify-start">
       <div className="sidebar w-1/5 h-full bg-black py-4 text-white space-y-4">
@@ -155,18 +176,21 @@ const HashDice = () => {
           <div className="space-y-2 ">
             <div className="flex items-center justify-between ">
               <div>Payout</div>
-              <div>chance: 50%</div>
+              <div>chance: {formatNumber(chance)}%</div>
             </div>
             <div className=" flex gap-1 w-full h-10 bg-gray-500 ">
               <input
                 type="number"
                 className="outline-none h-full font-semibold w-full px-1 bg-transparent"
                 value={payout}
+                onChange={(e) => {
+                  setPayout(parseInt(e.target.value));
+                }}
+                min={1}
               />
             </div>
           </div>
         </div>
-
         <div
           onClick={generateNumbers}
           className="mx-4 h-16 bg-green-500 hover:bg-green-600  font-semibold text-lg flex items-center justify-center cursor-pointer"
@@ -237,33 +261,29 @@ const HashDice = () => {
             Spin
           </button>
         </div>
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center text-white">
           <div
-            onClick={() => numberMileStone("High")}
+            onClick={() => setSelectedMileStone(high)}
             className={`${
-              selectedMileStone <= 49999 && "text-green-500"
+              selectedMileStone === high && "text-green-500"
             } px-4 py-2 cursor-pointer bg-slate-500`}
           >
             High
           </div>
           <div className="bg-gray-600 px-4 py-2 text-white font-semibold ">
-            {selectedMileStone > 49999 ? "<" : ">"}
+            {selectedMileStone === high ? ">" : "<"}
             {selectedMileStone}
           </div>
           <div
-            onClick={() => numberMileStone("Low")}
+            onClick={() => setSelectedMileStone(low)}
             className={`${
-              selectedMileStone > 49999 && "text-green-500"
+              selectedMileStone === low && "text-green-500"
             } px-4 py-2 cursor-pointer bg-slate-500`}
           >
             Low
           </div>
         </div>
       </div>
-      {/* <div>
-        compare: {selectedMileStone} {arrayNumbersRandom}
-      </div>
-      <div> right:{countRight}</div> */}
     </div>
   );
 };

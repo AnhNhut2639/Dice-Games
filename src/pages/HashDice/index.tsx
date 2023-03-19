@@ -10,6 +10,8 @@ import {
 import { formatNumber } from "../../utils";
 import { useDispatch } from "react-redux";
 import AnimatedNumbers from "react-animated-numbers";
+import SuccessSound from "../../audio/success.mp3";
+import SpinSound from "../../audio/spin.mp3";
 const HashDice = () => {
   const dispatch = useDispatch();
   const [numberRandom, setNumberRandom] = useState<number>(0);
@@ -19,6 +21,9 @@ const HashDice = () => {
   const [arrayNumbersRandom, setArrayNumbersRandom] = useState<Array<string>>(
     []
   );
+  // audio
+  const audioSuccess = new Audio(SuccessSound);
+  const audioSpin = new Audio(SpinSound);
 
   // amount
   const currentMoney = useShallowEqualSelector(getCurrentMoney);
@@ -34,8 +39,8 @@ const HashDice = () => {
     setAmount(amount * 2);
   };
   const setDivideDoubleAmount = () => {
-    if (amount <= 100) {
-      setAmount(100);
+    if (amount <= 100000) {
+      setAmount(100000);
       return;
     }
     setAmount(amount / 2);
@@ -44,6 +49,7 @@ const HashDice = () => {
   const generateNumbers = () => {
     const min = 10000;
     const max = 99999;
+    audioSpin.play();
     const num = Math.floor(Math.random() * (max - min + 1)) + min;
     const arr = num.toString();
 
@@ -67,6 +73,7 @@ const HashDice = () => {
         setCountRight(true);
         const result = amount * payout + amount;
         setMoneyAdd(amount * payout);
+        audioSuccess.play();
         dispatch(winBet(result));
         dispatch(setLoading(false));
       } else {
@@ -79,6 +86,7 @@ const HashDice = () => {
         setCountRight(true);
         const result = amount * payout + amount;
         setMoneyAdd(amount * payout);
+        audioSuccess.play();
         dispatch(winBet(result));
         dispatch(setLoading(true));
       } else {

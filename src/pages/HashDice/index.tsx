@@ -6,6 +6,8 @@ import {
   winBet,
   selectLoading,
   setLoading,
+  getMileStoneCompare,
+  setMileStoneCompare,
 } from "../../store/slices/appSlice";
 import { formatNumber } from "../../utils";
 import { useDispatch } from "react-redux";
@@ -18,7 +20,6 @@ const HashDice = () => {
   const [numberRandom, setNumberRandom] = useState<number>(0);
   const [countRight, setCountRight] = useState<boolean>(false);
   const [MoneyAdd, setMoneyAdd] = useState<number>(0);
-  const [selectedMileStone, setSelectedMileStone] = useState<number>(49999);
   const [arrayNumbersRandom, setArrayNumbersRandom] = useState<Array<string>>(
     []
   );
@@ -32,6 +33,7 @@ const HashDice = () => {
   // amount
   const currentMoney = useShallowEqualSelector(getCurrentMoney);
   const isLoading = useShallowEqualSelector(selectLoading);
+  const currentMileStoneCompare = useShallowEqualSelector(getMileStoneCompare);
   const [amount, setAmount] = useState<number>(100000);
   const [payout, setPayout] = useState<number>(1.98);
   const [chance, setChance] = useState<number>(50);
@@ -62,11 +64,13 @@ const HashDice = () => {
     if (isNaN(payout) || payout === 0) {
       setPayout(1);
     }
+    if (payout > 500) {
+      setPayout(500);
+    }
     flushSync(() => {
       setLow(chance);
       setHigh(highSet);
     });
-
     dispatch(priceBet(amount));
     dispatch(setLoading(true));
     const newNumbers = Array.from(arr);
@@ -74,12 +78,12 @@ const HashDice = () => {
     setNumberRandom(num);
   };
   useEffect(() => {
-    setSelectedMileStone(high);
+    dispatch(setMileStoneCompare(high));
   }, [high, low]);
 
   const compare = useCallback(() => {
-    if (selectedMileStone === high) {
-      if (numberRandom > high) {
+    if (Math.round(currentMileStoneCompare) === high) {
+      if (Math.round(numberRandom) > high) {
         setCountRight(true);
         const result = amount * payout + amount;
         setMoneyAdd(amount * payout);
@@ -91,8 +95,8 @@ const HashDice = () => {
         return;
       }
     }
-    if (selectedMileStone === low) {
-      if (numberRandom <= low) {
+    if (Math.round(currentMileStoneCompare) === low) {
+      if (Math.round(numberRandom) <= low) {
         setCountRight(true);
         const result = amount * payout + amount;
         setMoneyAdd(amount * payout);
@@ -125,10 +129,16 @@ const HashDice = () => {
   // set chance
   useEffect(() => {
     if (isNaN(payout) || payout === 0) {
-      const setChanceCan = maxLimit / 1;
+      const setChanceCan = Math.round(maxLimit / 1);
+      setChance(setChanceCan);
+    }
+    if (payout > 500) {
+      alert("Limit 500");
+      const setChanceCan = Math.round(maxLimit / 500);
+      setPayout(500);
       setChance(setChanceCan);
     } else {
-      const setChanceCan = maxLimit / payout;
+      const setChanceCan = Math.round(maxLimit / payout);
       setChance(setChanceCan);
     }
   }, [payout]);
@@ -154,6 +164,7 @@ const HashDice = () => {
                 type="number"
                 className="outline-none h-full font-semibold w-2/4 px-1 bg-transparent"
                 value={amount}
+                readOnly
               />
               <div
                 className="flex items-center justify-center h-full w-12 bg-[#31343b] cursor-pointer opacity-70 hover:opacity-100"
@@ -176,17 +187,16 @@ const HashDice = () => {
           <div className="space-y-2 ">
             <div className="flex items-center justify-between ">
               <div>Payout</div>
-              <div>chance: {formatNumber(chance)}%</div>
+              <div>
+                Chance: {isNaN(chance) ? 99 : formatNumber(chance / 1000)}%
+              </div>
             </div>
             <div className=" flex gap-1 w-full h-10 bg-gray-500 ">
               <input
                 type="number"
                 className="outline-none h-full font-semibold w-full px-1 bg-transparent"
                 value={payout}
-                onChange={(e) => {
-                  setPayout(parseInt(e.target.value));
-                }}
-                min={1}
+                onChange={(e) => setPayout(parseInt(e.target.value))}
               />
             </div>
           </div>
@@ -203,8 +213,8 @@ const HashDice = () => {
           </button>
         </div>
       </div>
-      <div className="content relative w-4/5 h-full flex flex-col gap-6 items-center justify-center bg-blue-300 ">
-        <div className="absolute flex gap-1 top-10 right-20 font-semibold text-xl text-white">
+      <div className="content relative w-4/5 h-full flex flex-col gap-6 items-center justify-center ">
+        <div className="absolute flex gap-1 top-10 right-20 font-semibold text-xl text-black">
           <div>Wallet:</div>
           <div className="relative">
             {formatNumber(currentMoney)}
@@ -229,6 +239,7 @@ const HashDice = () => {
           ) : arrayNumbersRandom ? (
             arrayNumbersRandom.map((number, index) => (
               <AnimatedNumbers
+                key={index}
                 includeComma
                 animateToNumber={parseInt(number)}
                 locale="en-US"
@@ -263,21 +274,21 @@ const HashDice = () => {
         </div>
         <div className="flex items-center justify-center text-white">
           <div
-            onClick={() => setSelectedMileStone(high)}
+            onClick={() => dispatch(setMileStoneCompare(high))}
             className={`${
-              selectedMileStone === high && "text-green-500"
+              currentMileStoneCompare === high && "text-green-500"
             } px-4 py-2 cursor-pointer bg-slate-500`}
           >
             High
           </div>
           <div className="bg-gray-600 px-4 py-2 text-white font-semibold ">
-            {selectedMileStone === high ? ">" : "<"}
-            {selectedMileStone}
+            {currentMileStoneCompare === high ? ">" : "<"}
+            {Math.round(currentMileStoneCompare)}
           </div>
           <div
-            onClick={() => setSelectedMileStone(low)}
+            onClick={() => dispatch(setMileStoneCompare(low))}
             className={`${
-              selectedMileStone === low && "text-green-500"
+              currentMileStoneCompare === low && "text-green-500"
             } px-4 py-2 cursor-pointer bg-slate-500`}
           >
             Low

@@ -103,3 +103,24 @@ input::-webkit-inner-spin-button {
       transform: scale(0) translateY(-100px);
     }
 }
+/* rc-slider */
+.custom-slider .rc-slider-rail{
+  height: 10px !important;
+  background-color: orange !important; 
+}
+.custom-slider .rc-slider-track{
+  height: 10px !important;
+  background-color: green  !important;
+}
+.custom-slider .rc-slider-handle{
+  height: 20px !important;
+  width: 20px !important;
+}
+.over .rc-slider-rail{
+  height: 10px !important;
+  background-color: green !important; 
+}
+.over .rc-slider-track{
+  height: 10px !important;
+  background-color: orange  !important;
+}

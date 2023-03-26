@@ -3,6 +3,7 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 const NotFound = lazy(() => import("./pages/not-found"));
 const HashDice = lazy(() => import("./pages/HashDice"));
+const ClassicDice = lazy(() => import("./pages/ClassicDice"));
 
 function App() {
   return (
@@ -10,6 +11,7 @@ function App() {
       <Suspense fallback={<div>Loading...</div>}>
         <Routes>
           <Route path="/" element={<HashDice />} />
+          <Route path="/classic-dice" element={<ClassicDice />} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>

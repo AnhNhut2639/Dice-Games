@@ -53,6 +53,7 @@ const ClassicDice = () => {
     const max = 98;
     setInitial(false);
     handleCheckPayout();
+    handleCheckChance();
     const num = Math.floor(Math.random() * (max - min + 1)) + min;
     const arr = num.toString();
     dispatch(setLoading(true));
@@ -103,6 +104,21 @@ const ClassicDice = () => {
     if (payout > 495) {
       // alert("maximun is 495");
       setPayout(495);
+    }
+  };
+  // handle Manual change chance
+  const handleCheckChance = () => {
+    if (chance > 98) {
+      setChance(98);
+    }
+    if (chance <= 0) {
+      setChance(1);
+    }
+    if (isRollUnder) {
+      setRollNumber(chance);
+    }
+    if (isRollUnder === false) {
+      setRollNumber(100 - chance);
     }
   };
   // handle compare
@@ -356,7 +372,7 @@ const ClassicDice = () => {
                   type="number"
                   className="outline-none  h-full font-semibold w-2/4 px-1 bg-transparent"
                   value={chance}
-                  readOnly
+                  onChange={(e) => setChance(parseInt(e.target.value))}
                 />
                 <div className="flex items-center justify-center h-full w-12 text-green-500">
                   %

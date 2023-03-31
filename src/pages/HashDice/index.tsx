@@ -15,6 +15,7 @@ import AnimatedNumbers from "react-animated-numbers";
 import SuccessSound from "../../audio/success.mp3";
 import SpinSound from "../../audio/spin.mp3";
 import { flushSync } from "react-dom";
+import { Link } from "react-router-dom";
 const HashDice = () => {
   const dispatch = useDispatch();
   const [numberRandom, setNumberRandom] = useState<number>(0);
@@ -143,8 +144,44 @@ const HashDice = () => {
     }
   }, [payout]);
   return (
-    <div className="h-[100vh] w-[100vw] flex items-start justify-start">
-      <div className="sidebar w-1/5 h-full bg-black py-4 text-white space-y-4">
+    <div className="h-[100vh] w-[100vw] flex items-start justify-start bg-[#17181b]">
+      <div className="game-menu flex flex-col items-center justify-start w-[8%] h-full bg-gray-500  py-4 text-white space-y-10">
+        <Link to={"/"}>
+          <div className="flex flex-col items-center justify-center gap-2 cursor-pointer hover:text-white/75">
+            <div className="h-10 w-10 ">
+              <img
+                src={"/number-7.png"}
+                className="h-full w-full object-contain"
+              />
+            </div>
+            <div>Hash Dice</div>
+          </div>
+        </Link>
+
+        <Link to={"/classic-dice"}>
+          <div className="flex flex-col items-center justify-center gap-2 cursor-pointer hover:text-white/75">
+            <div className="h-10 w-10 ">
+              <img
+                src={"/classic-dice.png"}
+                className="h-full w-full object-contain"
+              />
+            </div>
+            <div className="text-center">Classic Dice</div>
+          </div>
+        </Link>
+        <Link to={"/ultimate-dice"}>
+          <div className="flex flex-col items-center justify-center gap-2 cursor-pointer hover:text-white/75">
+            <div className="h-10 w-10 ">
+              <img
+                src={"/ultimate-dice.png"}
+                className="h-full w-full object-contain"
+              />
+            </div>
+            <div className="text-center">Ultimate Dice</div>
+          </div>
+        </Link>
+      </div>
+      <div className="sidebar w-1/5 h-full py-4 text-white space-y-4">
         <div className="flex items-center justify-center gap-4 px-4">
           <div className="bg-gray-600 shadow-lg px-4 py-1 text-white font-semibold cursor-pointer ">
             Manual
@@ -214,7 +251,7 @@ const HashDice = () => {
         </div>
       </div>
       <div className="content relative w-4/5 h-full flex flex-col gap-6 items-center justify-center ">
-        <div className="absolute flex gap-1 top-10 right-20 font-semibold text-xl text-black">
+        <div className="absolute flex gap-1 top-10 right-20 font-semibold text-xl text-white">
           <div>Wallet:</div>
           <div className="relative">
             {formatNumber(currentMoney)}
@@ -227,7 +264,7 @@ const HashDice = () => {
             </div>
           </div>
         </div>
-        <div className="wrap-number flex items-center justify-center gap-4 text-5xl font-semibold">
+        <div className="wrap-number text-white flex items-center justify-center gap-4 text-5xl font-semibold">
           {arrayNumbersRandom.length <= 0 ? (
             <>
               <div>0</div>

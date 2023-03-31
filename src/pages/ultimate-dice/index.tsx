@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useState } from "react";
 import { useShallowEqualSelector } from "../../hooks/useShallowEqualSelector";
 import {
   getCurrentMoney,
@@ -16,7 +16,7 @@ import SuccessSound from "../../audio/success.mp3";
 import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
 import { Link } from "react-router-dom";
-const ClassicDice = () => {
+const UltimateDice = () => {
   const dispatch = useDispatch();
   const currentMoney = useShallowEqualSelector(getCurrentMoney);
   const isLoading = useShallowEqualSelector(selectLoading);
@@ -28,11 +28,15 @@ const ClassicDice = () => {
   );
   const [initial, setInitial] = useState<boolean>(true);
   const [rollNumber, setRollNumber] = useState<number>(50); //MileStone
-  const [resultRandom, setResultRandom] = useState<number>(50); // to compare
+  const [resultRandom, setResultRandom] = useState<number>(5000); // to compare
   const [chance, setChance] = useState<number>(50);
   const audioSuccess = new Audio(SuccessSound); //audio
   const [amount, setAmount] = useState<number>(100000);
   const [payout, setPayout] = useState<number>(1.98);
+  const [rangeWin, setRangeWin] = useState({
+    minMileStone: 2500,
+    maxMileStone: 7500,
+  });
   const maxChance = 98;
   const minChance = 2;
   const setDoubleAmount = () => {
@@ -50,8 +54,8 @@ const ClassicDice = () => {
     setAmount(amount / 2);
   };
   const generateNumbers = () => {
-    const min = 2;
-    const max = 98;
+    const min = 0;
+    const max = 9999;
     setInitial(false);
     handleCheckPayout();
     handleCheckChance();
@@ -63,10 +67,29 @@ const ClassicDice = () => {
     setResultRandom(num);
   };
   // Compare result
+  const handleCheckBeforeGenerate = () => {
+    if (rangeWin.maxMileStone === rangeWin.minMileStone) {
+      if (
+        window.confirm(`
+      The bet amount may exceed the potential maximum profit. Please confirm you're aware that you may not get the full amount when you win a higher payout.
+      `)
+      ) {
+        generateNumbers();
+      } else {
+        return;
+      }
+    } else {
+      generateNumbers();
+    }
+  };
+
   const compare = () => {
     const moneyWin = payout * amount - amount;
     if (isRollUnder) {
-      if (resultRandom <= rollNumber) {
+      if (
+        resultRandom >= rangeWin.minMileStone &&
+        resultRandom <= rangeWin.maxMileStone
+      ) {
         setOnWinEffect(true);
         audioSuccess.play();
         dispatch(winBet(moneyWin));
@@ -128,38 +151,31 @@ const ClassicDice = () => {
     compare();
   }, [resultRandom]);
   const onChangePackage = (value: number | number[]) => {
-    if (typeof value === "number") {
-      setRollNumber(value);
+    if (Array.isArray(value)) {
+      // setRollNumber(value);
+      setRangeWin({ minMileStone: value[0], maxMileStone: value[1] });
     }
   };
   const onSetMaxChance = () => {
-    if (isRollUnder === false) {
-      // roll over
-      setRollNumber(minChance);
-    } else {
-      setRollNumber(maxChance);
-    }
+    setChance(maxChance);
+    setRangeWin({ minMileStone: 200, maxMileStone: 9999 });
   };
   const onSetMinChance = () => {
-    if (isRollUnder === false) {
-      // roll over
-      setRollNumber(maxChance);
-    } else {
-      setRollNumber(minChance);
-    }
+    setChance(0.01);
+    setRangeWin({ minMileStone: 5100, maxMileStone: 5100 });
   };
   const onSetDecreaseFiveChance = () => {
-    if (rollNumber <= minChance) {
-      setRollNumber(minChance);
+    if (chance <= minChance) {
+      setChance(minChance);
     } else {
-      setRollNumber(rollNumber - 5);
+      setChance(chance - 5);
     }
   };
   const onSetIncreaseFiveChance = () => {
-    if (rollNumber >= maxChance) {
-      setRollNumber(maxChance);
+    if (chance >= maxChance) {
+      setChance(maxChance);
     } else {
-      setRollNumber(rollNumber + 5);
+      setChance(chance + 5);
     }
   };
 
@@ -167,30 +183,20 @@ const ClassicDice = () => {
   const numberFixed = (number: number) => {
     return parseFloat(number.toFixed(4));
   };
-  const maxCalculator = 99;
+  const maxCalculator = 9900;
   useEffect(() => {
-    const result = maxCalculator / rollNumber;
+    const result =
+      maxCalculator / (rangeWin.maxMileStone + 1 - rangeWin.minMileStone);
     const fixedNumber = numberFixed(result);
     setPayout(fixedNumber);
-  }, [rollNumber]);
+  }, [rangeWin]);
 
-  useEffect(() => {
-    if (isRollUnder) {
-      setRollNumber(100 - rollNumber);
-    }
-    if (isRollUnder === false) {
-      setRollNumber(100 - rollNumber);
-    }
-  }, [isRollUnder]);
   // handle setChance
   useEffect(() => {
-    if (isRollUnder) {
-      setChance(rollNumber);
-    }
-    if (isRollUnder === false) {
-      setChance(100 - rollNumber);
-    }
-  }, [rollNumber]);
+    // new win chance
+    const chancePercent = (rangeWin.maxMileStone - rangeWin.minMileStone) / 100;
+    setChance(chancePercent);
+  }, [rangeWin]);
   // end setChance
   // animation when win
   useEffect(() => {
@@ -200,6 +206,36 @@ const ClassicDice = () => {
       }, 1000);
     }
   }, [onWinEffect]);
+
+  // validate range win
+  // const isIn = true; // In or Out
+  useLayoutEffect(() => {
+    if (isNaN(rangeWin.minMileStone)) {
+      setRangeWin({ ...rangeWin, minMileStone: 0 });
+    }
+    if (isNaN(rangeWin.maxMileStone)) {
+      setRangeWin({ ...rangeWin, maxMileStone: 0 });
+    }
+  }, [rangeWin]);
+  // validate min value
+  useEffect(() => {
+    // if (isIn) {
+    if (rangeWin.minMileStone >= rangeWin.maxMileStone) {
+      setRangeWin({ ...rangeWin, minMileStone: rangeWin.maxMileStone });
+    }
+    // }
+  }, [rangeWin.minMileStone]);
+  const onCheckMaxInput = () => {
+    // if (isIn) {
+    if (rangeWin.maxMileStone <= rangeWin.minMileStone) {
+      setRangeWin({ ...rangeWin, maxMileStone: rangeWin.minMileStone });
+    }
+    // }
+  };
+  // set win chance
+
+  // useEffect(() => {}, [chance]);
+
   return (
     <div className="h-[100vh] w-[100vw] flex items-start justify-start bg-[#17181b]">
       <div className="game-menu flex flex-col items-center justify-start w-[8%] h-full bg-gray-500  py-4 text-white space-y-10">
@@ -287,7 +323,8 @@ const ClassicDice = () => {
             </div>
           </div>
           <div
-            onClick={generateNumbers}
+            // onClick={generateNumbers}
+            onClick={handleCheckBeforeGenerate}
             className="h-16 bg-green-500 hover:bg-green-600  font-semibold text-lg flex items-center justify-center cursor-pointer"
           >
             <button
@@ -316,33 +353,74 @@ const ClassicDice = () => {
             )}
           </div>
         </div>
-        <div className="slider-area w-[80%] flex flex-col items-center justify-start h-24 relative">
+        {/* Choose Number */}
+        <div className="w-[80%] flex items-center justify-center mb-36 h-32 p-4  mt-2">
+          <div className="wrap-content font-semibold text-3xl flex items-center justify-center gap-4">
+            <div className="min-stone text-gray-700">
+              {rangeWin.minMileStone} {`<=`}
+            </div>
+            <div className="choose-number h-36 w-[500px] border-2 border-solid border-gray-600 py-2 px-4 ">
+              <div className="wrap-choose flex flex-col items-center justify-start h-full w-full">
+                <div className="uppercase text-2xl text-slate-500">
+                  choose numbers
+                </div>
+                <div className="flex items-center justify-center gap-8">
+                  <div className="flex flex-col items-center justify-center gap-1">
+                    <div className="text-xl text-white">Low</div>
+                    <div className="h-12 w-32">
+                      <input
+                        type="tel"
+                        className="h-full w-full bg-gray-700 text-center outline-none text-white"
+                        maxLength={4}
+                        value={rangeWin.minMileStone}
+                        onChange={(e) =>
+                          setRangeWin({
+                            ...rangeWin,
+                            minMileStone: parseInt(e.target.value),
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div className="text-xl text-green-500 font-semibold cursor-pointer">
+                    &#8646;
+                  </div>
+                  <div className="flex flex-col items-center justify-center gap-1">
+                    <div className="text-xl text-white">High</div>
+                    <div className="h-12 w-32">
+                      <input
+                        type="tel"
+                        className="h-full w-full bg-gray-700 text-center outline-none text-white"
+                        maxLength={4}
+                        value={rangeWin.maxMileStone}
+                        onChange={(e) =>
+                          setRangeWin({
+                            ...rangeWin,
+                            maxMileStone: parseInt(e.target.value),
+                          })
+                        }
+                        defaultValue={rangeWin.maxMileStone}
+                        onBlur={onCheckMaxInput}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="max-stone text-gray-700">
+              {`<=`}
+              {rangeWin.maxMileStone}
+            </div>
+          </div>
+        </div>
+        {/* Slider */}
+        <div className="slider-area mt-10 w-[80%] flex flex-col items-center justify-start h-24 relative">
           <div className="absolute text-black flex items-center justify-center bg-green-600s font-semibold mt-2 -top-[170px] w-full h-[150px] px-4">
             <div
-              style={{ left: `${resultRandom}%` }}
+              style={{ left: `${resultRandom / 100}%` }}
               className={`h-full flex flex-col items-center justify-center w-1 bg-red-500s gap-2 absolute transition-all duration-300`}
             >
               <div className="w-44 flex items-center justify-center text-xl text-green-400 font-semibold h-14 border-[6px] border-solid border-gray-600  bg-[#24262b]">
-                {/* {resultRandom != 50
-                  ? arrayNumbersRandom.map((number, index) => {
-                      return (
-                        <AnimatedNumbers
-                          key={index}
-                          includeComma
-                          animateToNumber={parseInt(number)}
-                          locale="en-US"
-                          configs={[
-                            { mass: 1, tension: 220, friction: 100 },
-                            { mass: 1, tension: 180, friction: 130 },
-                            { mass: 1, tension: 280, friction: 90 },
-                            { mass: 1, tension: 180, friction: 135 },
-                            { mass: 1, tension: 260, friction: 100 },
-                            { mass: 1, tension: 210, friction: 180 },
-                          ]}
-                        ></AnimatedNumbers>
-                      );
-                    })
-                  : resultRandom} */}
                 {resultRandom}
               </div>
               <div className="h-20 w-44">
@@ -355,25 +433,27 @@ const ClassicDice = () => {
           </div>
           <div className="w-full h-[50%] flex items-center justify-center px-6 rounded-lg bg-[#474852] relative">
             <Slider
-              min={2}
-              max={98}
-              defaultValue={50}
-              value={rollNumber}
-              onChange={(value) => onChangePackage(value)}
+              range
+              allowCross={false}
+              min={0}
+              max={9999}
+              defaultValue={[2500, 7500]}
+              value={[rangeWin.minMileStone, rangeWin.maxMileStone]}
+              draggableTrack
               className={`custom-slider ${!isRollUnder && "over"}`}
-              // reverse={!isRollUnder}
+              onChange={(value) => onChangePackage(value)}
             />
             <div
-              style={{ left: `${resultRandom}%` }}
+              style={{ left: `${resultRandom / 100}%` }}
               className={`h-[10px] flex flex-col bg-white items-center justify-center w-2 mt-[6px] absolute`}
             ></div>
           </div>
           <div className="absolute text-white px-4 font-semibold mt-2 top-[50%] w-full h-4 flex items-center justify-between">
             <div>0</div>
-            <div className="left-[24.5%] absolute">25</div>
-            <div className="left-[49.5%] absolute">50</div>
-            <div className="left-[74.5%] absolute">75</div>
-            <div>100</div>
+            <div className="left-[24.5%] absolute">2500</div>
+            <div className="left-[49.5%] absolute">5000</div>
+            <div className="left-[74.5%] absolute">7500</div>
+            <div>9999</div>
           </div>
         </div>
         <div className="w-[80%] h-32 p-4  bg-[#222328] mt-4">
@@ -389,17 +469,11 @@ const ClassicDice = () => {
             </div>
             <div
               className="roll h-12 w-1/4 space-y-2 cursor-pointer relative"
-              onClick={() => dispatch(setIsBetRollUnder(!isRollUnder))}
+              // onClick={() => dispatch(setIsBetRollUnder(!isRollUnder))}
             >
-              <div>Roll {isRollUnder ? "Under" : "Over"}</div>
-              <input
-                type="number"
-                className="outline-none h-full font-semibold w-full px-1 bg-[#474852] cursor-pointer"
-                value={rollNumber}
-                readOnly
-              />
-              <div className="absolute -bottom-5 right-4 text-green-500 font-semibold text-lg">
-                &#8646;
+              <div>Win Amount</div>
+              <div className="flex items-center justify-start h-full font-semibold w-full px-1 bg-[#474852] cursor-pointer">
+                {isNaN(payout) ? 0 : formatNumber(payout * amount)}
               </div>
             </div>
             <div className="win-chance h-12 w-1/3 space-y-2">
@@ -447,4 +521,4 @@ const ClassicDice = () => {
   );
 };
 
-export default ClassicDice;
+export default UltimateDice;
